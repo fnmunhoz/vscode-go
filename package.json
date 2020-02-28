@@ -623,6 +623,11 @@
                 "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
                 "default": ""
               },
+              "remoteGoModCache": {
+                "type": "string",
+                "description": "If remote debugging, the path to the go modules cache on the remote machine, if different from the local machine.",
+                "default": ""
+              },
               "port": {
                 "type": "number",
                 "description": "The port that the delve debugger will be listening on.",

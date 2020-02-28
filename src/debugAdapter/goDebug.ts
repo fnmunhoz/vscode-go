@@ -236,6 +236,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	env?: { [key: string]: string };
 	mode?: 'auto' | 'debug' | 'remote' | 'test' | 'exec';
 	remotePath?: string;
+	remoteGoModCache?: string;
 	port?: number;
 	host?: string;
 	buildFlags?: string;
@@ -267,6 +268,7 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	cwd?: string;
 	mode?: 'local' | 'remote';
 	remotePath?: string;
+	remoteGoModCache?: string;
 	port?: number;
 	host?: string;
 	trace?: 'verbose' | 'log' | 'error';
@@ -316,6 +318,7 @@ function normalizePath(filePath: string) {
 class Delve {
 	public program: string;
 	public remotePath: string;
+	public remoteGoModCache: string;
 	public loadConfig: LoadConfig;
 	public connection: Promise<RPCConnection>;
 	public onstdout: (str: string) => void;
@@ -334,6 +337,7 @@ class Delve {
 		this.request = launchArgs.request;
 		this.program = normalizePath(program);
 		this.remotePath = launchArgs.remotePath;
+		this.remoteGoModCache = launchArgs.remoteGoModCache;
 		this.isApiV1 = false;
 		if (typeof launchArgs.apiVersion === 'number') {
 			this.isApiV1 = launchArgs.apiVersion === 1;
@@ -855,6 +859,17 @@ class GoDebugSession extends LoggingDebugSession {
 				return path.join(goroot, pathToConvert.substr(index));
 			}
 		}
+
+		const remoteGoModCache = this.delve.remoteGoModCache;
+		const localGoModCache = `${process.env['GOPATH']}/pkg/mod`;
+
+		if (pathToConvert.startsWith(remoteGoModCache)) {
+			return pathToConvert
+				.replace(remoteGoModCache, localGoModCache)
+				.split(this.remotePathSeparator)
+				.join(this.localPathSeparator);
+		}
+
 		return pathToConvert
 			.replace(this.delve.remotePath, this.delve.program)
 			.split(this.remotePathSeparator)
